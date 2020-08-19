@@ -51,7 +51,9 @@ ui <- fluidPage(
             
            
          
-     
+          sliderInput("age", "Age range:",
+                      min = min(ELCL$Age), max(ELCL$Age), value = c(min(ELCL$Age),max(ELCL$Age))
+          ),
             
 
             sliderInput("minNinety", "Minimum number of 90s:",
@@ -68,8 +70,8 @@ ui <- fluidPage(
                         tabPanel("Plot", 
                                  h4("", align = "center"),
                                  
-                                 plotOutput("plot2"),
-                                tableOutput("myTable")),
+                                 plotOutput("plot2")),
+                               # tableOutput("myTable")),
                         tabPanel("Dark Mode", 
                                  
                                  plotOutput("plot3")),
@@ -85,14 +87,27 @@ ui <- fluidPage(
 server <- function(input, output) {
     
     myData <- reactive({
-         
-        filterData(df = ELCL,
-                   Xx = input$x,
-                   Yy=input$y,
-                   minNinety = input$minNinety,
-                   comp = input$Competition)
+      req(input$x) 
+      req(input$y)
+      req(input$minNinety)
+      req(input$Competition)
+      req(input$age[1])
+      req(input$age[2])
+      filter(ELCL,`90s` >= input$minNinety) %>% filter(comp %in% input$Competition) %>%
+      filter(Age>input$age[1] & Age < input$age[2])%>%
+      select(Player,`90s`,input$x,input$y) %>%
+      # idvec <- grep(Xx, colnames(df), value = TRUE)
+      #  df<-df[c("Player",idvec, Yy,"90s")]
+      mutate(xAxis = input$x) %>%
+      mutate(yAxis = input$y) %>%
+      setNames(gsub(input$x, "X", names(.))) %>%
+        setNames(gsub(input$y, "Y", names(.)))
+    
+      
+    
         
     })
+    
     output$codes <- renderReactable({
         reactable(
             myData(),
