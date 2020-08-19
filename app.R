@@ -56,7 +56,7 @@ ui <- fluidPage(
           sliderInput("age", "Age range:",
                       min = min(ELCL$Age), max(ELCL$Age), value = c(min(ELCL$Age),max(ELCL$Age))
           ),
-            
+          
 
             sliderInput("minNinety", "Minimum number of 90s:",
                         min = 1, max = 5, value = 3
@@ -78,6 +78,7 @@ ui <- fluidPage(
                                  
                                  plotOutput("plot3")),
                         tabPanel("Table", 
+                                 h5(textOutput("counter")),
                                  reactableOutput("codes", width = "auto", height = "auto",
                                                  inline = FALSE))
             )
@@ -87,7 +88,16 @@ ui <- fluidPage(
 
 
 server <- function(input, output) {
-    
+  output$counter <- 
+    renderText({
+      if (!file.exists("counter.Rdata")) 
+        counter <- 0
+      else
+        load(file="counter.Rdata")
+      counter  <- counter + 1
+      save(counter, file="counter.Rdata")     
+      paste(counter)
+    })
     myData <- reactive({
       req(input$x) 
       req(input$y)
