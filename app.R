@@ -9,6 +9,8 @@ library(glue)
 source("HelpersFBREF.R")
 ga_set_tracking_id("UA-175572271-1")
 ga_set_approval(consent = TRUE)
+ga_set_tracking_id("UA-170459986-1")
+ga_set_approval(consent = TRUE)
 ELCL <- readRDS("fbrefdata.rds")
 
 
@@ -145,7 +147,7 @@ server <- function(input, output) {
                            percY=input$percY)
         }
         }
-        , height = 400, width = 600)
+        , height = 500, width = 750)
     output$plot3<-renderPlot({
         if(input$typeX == "p90X" & input$typeY != "p90Y"){
             scatterMaken90XDark(df = myData(),
@@ -165,7 +167,7 @@ server <- function(input, output) {
                          percY=input$percY)
         }
     }
-    , height = 400, width = 600)
+    , height = 500, width = 750)
       
 }
 
