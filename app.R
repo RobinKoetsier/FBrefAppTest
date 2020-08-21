@@ -6,14 +6,15 @@ library(reactable)
 library(GAlogger)
 library(ggrepel)
 library(glue)
+library(shinyWidgets)
 source("HelpersFBREF.R")
 ga_set_tracking_id("UA-175572271-1")
 ga_set_approval(consent = TRUE)
 
-ELCL <- readRDS("fbrefdata.rds")
-
-
-ChoicesList <- colnames(ELCL)[c(3:55)]
+#ELCL <- readRDS("fbrefdata.rds")
+ELCL <- readRDS("All.rds")
+ELCL$Squad <- sub(".*? ", "", ELCL$Squad)
+ChoicesList <- colnames(ELCL)[c(3:136)]
 ChoicesList <- sort(ChoicesList)
 ui <- fluidPage(tags$head(HTML(
   "<script>
@@ -40,23 +41,33 @@ ui <- fluidPage(tags$head(HTML(
     # Sidebar with a slider input for number of bins 
     sidebarLayout(
         sidebarPanel(
+          fluidRow(column(6, 
           checkboxGroupInput(inputId = "Competition",
                              label = "Select Competition(s):",
-                             choices = c("Champions League" = "Champions League",
-                                         "Europa League" = "Europa League"),
-                             selected = "Champions League"),
+                             choices = unique(ELCL$comp),
+                             selected =  unique(ELCL$comp))),
+          column(3,
             radioButtons("typeX", "X Axis:",
                          c("Sum" = "normX",
-                           "per 90" = "p90X")),
-            
+                           "per 90" = "p90X"),
+                         width = "50")),
+          column(3,
             radioButtons("typeY", "Y Axis:",
                          c("Sum" = "normY",
-                           "per 90" = "p90Y")),
+                           "per 90" = "p90Y"),
+                         width = "50")),
             
-           
+         
           
-   
-                
+   hr(),hr(),hr(),hr(),hr(),hr(),hr(),hr(),hr(),hr(),hr(),hr(),hr(),
+
+   pickerInput(
+     inputId = "teams", label = "Teams to show players from:",
+     choices = unique(ELCL$Squad),
+     options = list(`actions-box` = TRUE,`live-search`=TRUE), 
+     selected = ELCL$Squad,
+     multiple = TRUE
+   ),    
                 selectInput('x', 'X', 
                           
                             selected = "Progressive Passes",
@@ -80,7 +91,7 @@ ui <- fluidPage(tags$head(HTML(
             numericInput("percX", "See label above certain percentile X:", 99, min = 50, max = 100),
             numericInput("percY", "See label above certain percentile Y:", 99, min = 50, max = 100)
             
-        ),
+        )),
         
         # Show a plot of the generated distribution
         mainPanel(
@@ -94,7 +105,7 @@ ui <- fluidPage(tags$head(HTML(
                                  
                                  plotOutput("plot3")),
                         tabPanel("Table", 
-                                 h5(textOutput("counter")),
+                               
                                  reactableOutput("codes", width = "auto", height = "auto",
                                                  inline = FALSE))
             )
@@ -104,16 +115,10 @@ ui <- fluidPage(tags$head(HTML(
 
 
 server <- function(input, output) {
-  output$counter <- 
-    renderText({
-      if (!file.exists("counter.Rdata")) 
-        counter <- 0
-      else
-        load(file="counter.Rdata")
-      counter  <- counter + 1
-      save(counter, file="counter.Rdata")     
-      paste(counter)
-    })
+  observeEvent(input$Competition, {
+    print(input$Competition)
+    sub<-input$Competition
+  })
     myData <- reactive({
       req(input$x) 
       req(input$y)
@@ -121,16 +126,20 @@ server <- function(input, output) {
       req(input$Competition)
       req(input$age[1])
       req(input$age[2])
+      req(sub)
+      
+      
       filter(ELCL,`90s` >= input$minNinety) %>% filter(comp %in% input$Competition) %>%
+        filter(Squad %in% input$teams) %>%
       filter(Age>input$age[1] & Age < input$age[2])%>%
       select(Player,`90s`,input$x,input$y) %>%
-      # idvec <- grep(Xx, colnames(df), value = TRUE)
-      #  df<-df[c("Player",idvec, Yy,"90s")]
+      # mutate(subtitle = sub) %>%
+     
       mutate(xAxis = input$x) %>%
       mutate(yAxis = input$y) %>%
       setNames(gsub(input$x, "X", names(.))) %>%
-        setNames(gsub(input$y, "Y", names(.)))
-    
+        setNames(gsub(input$y, "Y", names(.))) 
+      
       
     
         
@@ -168,9 +177,17 @@ server <- function(input, output) {
                            percX=input$percX,
                            percY=input$percY)
         }else{
-            scatterMaken(df = myData(),
-                           percX=input$percX,
-                           percY=input$percY)
+          uniek<-unique(input$Competition)
+          ggplot(myData(),aes(x=as.integer(X),y=as.integer(Y)))+geom_point(colour='#026937') +
+            geom_label_repel(data=myData()%>% filter(X > quantile(X, input$percX/100)|
+                                                 Y > quantile(Y, input$percY/100)),aes(label = Player),fill="white",color="black")+
+            labs(x=myData()$xAxis,
+                 y=myData()$yAxis,
+                 title = paste0(myData()$xAxis," and " ,myData()$yAxis, " Europe 19/20"),
+                 subtitle= uniek,
+                 caption = "Data from FBref.com\n@RobinWilhelmus") +
+            theme_bw()+
+            theme(plot.title = element_text(hjust=0.5, size = 15))
         }
         }
         , height = 500, width = 750)
