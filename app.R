@@ -12,7 +12,7 @@ ga_set_tracking_id("UA-175572271-1")
 ga_set_approval(consent = TRUE)
 
 #ELCL <- readRDS("fbrefdata.rds")
-ELCL <- readRDS("All.rds")
+ELCL <- readRDS("ALL.rds")
 ELCL$Squad <- sub(".*? ", "", ELCL$Squad)
 ChoicesList <- colnames(ELCL)[c(3:136)]
 ChoicesList <- sort(ChoicesList)
