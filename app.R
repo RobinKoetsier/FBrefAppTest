@@ -15,7 +15,7 @@ nvisitors = reactiveVal(0)
 #ELCL <- readRDS("fbrefdata.rds")
 ELCL <- readRDS("ALL.rds")
 #ELCLSum <- readRDS("ALLSUM.rds")
-
+load(file="counter.Rdata")
 ChoicesList <- colnames(ELCL)[c(3:109,111:136)]
 
 ChoicesList <- sort(ChoicesList)
