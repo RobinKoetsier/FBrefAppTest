@@ -13,7 +13,8 @@ ga_set_approval(consent = TRUE)
 
 #ELCL <- readRDS("fbrefdata.rds")
 ELCL <- readRDS("ALL.rds")
-ELCL$Squad <- sub(".*? ", "", ELCL$Squad)
+#ELCLSum <- readRDS("ALLSUM.rds")
+
 ChoicesList <- colnames(ELCL)[c(3:136)]
 ChoicesList <- sort(ChoicesList)
 ui <- fluidPage(tags$head(HTML(
@@ -49,15 +50,20 @@ ui <- fluidPage(tags$head(HTML(
           column(3,
             radioButtons("typeX", "X Axis:",
                          c("Sum" = "normX",
-                           "per 90" = "p90X"),
+                           "Per 90" = "p90X"),
+                         width = "50"),
+            radioButtons("sum", "Sum values across competitions:",
+                         c("Yes (Slow)" = "yes",
+                           "No" = "no"),
+                         selected = "no",
                          width = "50")),
           column(3,
             radioButtons("typeY", "Y Axis:",
                          c("Sum" = "normY",
-                           "per 90" = "p90Y"),
+                           "Per 90" = "p90Y"),
                          width = "50")),
             
-         
+        
           
    hr(),hr(),hr(),hr(),hr(),hr(),hr(),hr(),hr(),hr(),hr(),hr(),hr(),
 
@@ -88,8 +94,8 @@ ui <- fluidPage(tags$head(HTML(
             sliderInput("minNinety", "Minimum number of 90s:",
                         min = 1, max = 5, value = 3
             ),
-            numericInput("percX", "See label above certain percentile X:", 99, min = 50, max = 100),
-            numericInput("percY", "See label above certain percentile Y:", 99, min = 50, max = 100)
+            numericInput("percX", "See label above certain percentile X:", 99.9, min = 50, max = 100),
+            numericInput("percY", "See label above certain percentile Y:", 99.9, min = 50, max = 100)
             
         )),
         
@@ -127,21 +133,32 @@ server <- function(input, output) {
       req(input$age[1])
       req(input$age[2])
       req(sub)
-      
+      if(input$sum == "yes"){
       
       filter(ELCL,`90s` >= input$minNinety) %>% filter(comp %in% input$Competition) %>%
         filter(Squad %in% input$teams) %>%
       filter(Age>input$age[1] & Age < input$age[2])%>%
+       ddply(c("Player","Age","Born"), numcolwise(sum)) %>%
       select(Player,`90s`,input$x,input$y) %>%
       # mutate(subtitle = sub) %>%
-     
+    
       mutate(xAxis = input$x) %>%
       mutate(yAxis = input$y) %>%
       setNames(gsub(input$x, "X", names(.))) %>%
         setNames(gsub(input$y, "Y", names(.))) 
       
-      
-    
+      }else{
+        filter(ELCL,`90s` >= input$minNinety) %>% filter(comp %in% input$Competition) %>%
+          filter(Squad %in% input$teams) %>%
+          filter(Age>input$age[1] & Age < input$age[2])%>%
+          select(Player,`90s`,input$x,input$y) %>%
+          # mutate(subtitle = sub) %>%
+          
+          mutate(xAxis = input$x) %>%
+          mutate(yAxis = input$y) %>%
+          setNames(gsub(input$x, "X", names(.))) %>%
+          setNames(gsub(input$y, "Y", names(.))) 
+      }
         
     })
     
@@ -177,14 +194,14 @@ server <- function(input, output) {
                            percX=input$percX,
                            percY=input$percY)
         }else{
-          uniek<-unique(input$Competition)
+          uniek<-input$Competition
           ggplot(myData(),aes(x=as.integer(X),y=as.integer(Y)))+geom_point(colour='#026937') +
             geom_label_repel(data=myData()%>% filter(X > quantile(X, input$percX/100)|
                                                  Y > quantile(Y, input$percY/100)),aes(label = Player),fill="white",color="black")+
             labs(x=myData()$xAxis,
                  y=myData()$yAxis,
-                 title = paste0(myData()$xAxis," and " ,myData()$yAxis, " Europe 19/20"),
-                 subtitle= uniek,
+                 title = paste0(myData()$xAxis," and " ,myData()$yAxis, " 19/20"),
+                # subtitle= substitute(uniek),
                  caption = "Data from FBref.com\n@RobinWilhelmus") +
             theme_bw()+
             theme(plot.title = element_text(hjust=0.5, size = 15))
