@@ -130,7 +130,7 @@ tabsetPanel(
                                checkboxGroupInput(inputId = "CompetitionSquad",
                                                   label = "Select Competition(s):",
                                                   choices = unique(AllSquad$comp),
-                                                  selected =  unique(AllSquad$comp))),
+                                                  selected =  unique(AllSquad$comp)[c(1:5)])),
                         column(3,
                                radioButtons("typeXSquad", "X Axis:",
                                             c("Sum" = "normX",
