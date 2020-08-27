@@ -19,7 +19,7 @@ AllSquad <- readRDS("AllSquad.rds")
 #ELCLSum <- readRDS("ALLSUM.rds")
 load(file="counter.Rdata")
 ChoicesList <- colnames(ELCL)[c(3:109,111:136)]
-ChoicesListSquad <- colnames(AllSquad)[c(2:173)]
+ChoicesListSquad <- colnames(AllSquad)[c(2:172)]
 ChoicesListSquad <- sort(ChoicesListSquad)
 ChoicesList <- sort(ChoicesList)
 ui <- fluidPage(tags$head(HTML(
@@ -155,12 +155,12 @@ tabsetPanel(
                         ),    
                         selectInput('xx', 'X', 
                                     
-                                    selected = ChoicesListSquad[sample(3:173,1)],
+                                    selected = ChoicesListSquad[sample(3:172,1)],
                                     choices = ChoicesListSquad, multiple=FALSE, selectize=TRUE),
                         
                         
                         selectInput('yy', 'Y', 
-                                    selected = ChoicesListSquad[sample(3:173,1)],
+                                    selected = ChoicesListSquad[sample(3:172,1)],
                                     choices = ChoicesListSquad, multiple=FALSE, selectize=TRUE),
                         
                         
