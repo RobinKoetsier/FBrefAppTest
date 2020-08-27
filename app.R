@@ -169,8 +169,8 @@ tabsetPanel(
                         
                         
                         
-                        numericInput("percXSquad", "See label above certain percentile X:", 99.9, min = 50, max = 100),
-                        numericInput("percYSquad", "See label above certain percentile Y:", 99.9, min = 50, max = 100)
+                        numericInput("percXSquad", "See label above certain percentile X:", 95, min = 50, max = 100),
+                        numericInput("percYSquad", "See label above certain percentile Y:", 95, min = 50, max = 100)
                         
                )),
              mainPanel( tabsetPanel(type = "tabs",
