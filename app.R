@@ -9,6 +9,7 @@ library(glue)
 library(shinyWidgets)
 library(plyr)
 source("HelpersFBREF.R")
+library(magrittr)
 ga_set_tracking_id("UA-175572271-1")
 ga_set_approval(consent = TRUE)
 
