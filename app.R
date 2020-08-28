@@ -11,15 +11,16 @@ library(plyr)
 source("HelpersFBREF.R")
 ga_set_tracking_id("UA-175572271-1")
 ga_set_approval(consent = TRUE)
-nvisitors = reactiveVal(0)
-#ELCL <- readRDS("fbrefdata.rds")
-ELCL <- readRDS("ALL.rds")
+
+
+ELCL <- readRDS("All.rds")
 AllSquad <- readRDS("AllSquad.rds")
 
-#ELCLSum <- readRDS("ALLSUM.rds")
-load(file="counter.Rdata")
+colnames(AllSquad) <- gsub("(GK)","GK",colnames(AllSquad))
+AllSquad[2:172] %<>% mutate_if(is.character,as.numeric)
+AllSquad[is.na(AllSquad)] <- 0
 ChoicesList <- colnames(ELCL)[c(3:109,111:136)]
-ChoicesListSquad <- colnames(AllSquad)[c(2:172)]
+ChoicesListSquad <- colnames(AllSquad)[c(2:157)]
 ChoicesListSquad <- sort(ChoicesListSquad)
 ChoicesList <- sort(ChoicesList)
 ui <- fluidPage(tags$head(HTML(
@@ -106,10 +107,11 @@ tabsetPanel(
                )),
              
              # Show a plot of the generated distribution
-             mainPanel(
+             mainPanel("Last update: 29-08-2020",
                tabsetPanel(type = "tabs",
                            tabPanel("Plot", 
-                                    uiOutput("myPlot"),
+                                 #   uiOutput("myPlot"),
+                                 
                                     h4("", align = "center"),
                                     
                                     plotOutput("plot2")),
@@ -119,8 +121,7 @@ tabsetPanel(
                                     plotOutput("plot3")),
                            tabPanel("Table", 
                                     
-                                    reactableOutput("codes", width = "auto", height = "auto",
-                                                    inline = FALSE))
+                                  )
                )
              )
            )),
@@ -156,12 +157,12 @@ tabsetPanel(
                         ),    
                         selectInput('xx', 'X', 
                                     
-                                    selected = ChoicesListSquad[sample(3:172,1)],
+                                    selected = ChoicesListSquad[sample(10:172,1)],
                                     choices = ChoicesListSquad, multiple=FALSE, selectize=TRUE),
                         
                         
                         selectInput('yy', 'Y', 
-                                    selected = ChoicesListSquad[sample(3:172,1)],
+                                    selected = ChoicesListSquad[sample(10:172,1)],
                                     choices = ChoicesListSquad, multiple=FALSE, selectize=TRUE),
                         
                         
@@ -174,8 +175,10 @@ tabsetPanel(
                         numericInput("percYSquad", "See label above certain percentile Y:", 95, min = 50, max = 100)
                         
                )),
-             mainPanel( tabsetPanel(type = "tabs",
+             mainPanel("Last update: 29-08-2020",
+               tabsetPanel(type = "tabs",
                                     tabPanel("Plot", 
+                                             textOutput("selected_var"),
                                              h4("", align = "center"),
                                              plotOutput("plot4")),
                                     # tableOutput("myTable")),
@@ -184,7 +187,8 @@ tabsetPanel(
                                              h4("", align = "center"),
                                              plotOutput("plot5")),
                                     tabPanel("Table", 
-                                             
+                                             reactableOutput("codes", width = "auto", height = "auto",
+                                                             inline = FALSE),
                                              h4("", align = "center"))
              )))
   )
@@ -235,6 +239,9 @@ server <- function(input, output) {
         setNames(gsub(input$y, "Y", names(.))) 
     }
     
+  })
+  output$selected_var <- renderText({ 
+    input$xx
   })
   myData2 <- reactive({
     req(input$xx) 
@@ -349,7 +356,7 @@ server <- function(input, output) {
   
   output$plot3<-renderPlot({
     if(input$typeX == "p90X" & input$typeY != "p90Y"){
-      ggplot(myData(),aes(x=as.integer(X)/`90s`,y=as.integer(Y)))+geom_point(colour='#026937') +
+      ggplot(myData(),aes(x=as.integer(X)/`90s`,y=as.integer(Y)))+geom_point(colour='red',alpha=0.5) +
         geom_label_repel(data=myData()%>% filter(X/`90s` > quantile(X/`90s`, input$percX/100)|
                                                    Y > quantile(Y, input$percY/100)),aes(label = Player),fill="black",color="white")+
         labs(x=glue::glue("{myData()$xAxis} P90"),
@@ -361,7 +368,7 @@ server <- function(input, output) {
         theme(plot.title = element_text(hjust=0.5, size = 15),
               plot.subtitle = element_text(hjust=0.5))
     }else  if(input$typeX == "p90X" & input$typeY == "p90Y") {
-      ggplot(myData(),aes(x=as.integer(X)/`90s`,y=as.integer(Y)/`90s`))+geom_point(colour='#026937') +
+      ggplot(myData(),aes(x=as.integer(X)/`90s`,y=as.integer(Y)/`90s`))+geom_point(colour='red',alpha=0.5) +
         geom_label_repel(data=myData()%>% filter(X/`90s` > quantile(X/`90s`, input$percX/100)|
                                                    Y/`90s` > quantile(Y/`90s`, input$percY/100)),aes(label = Player),fill="black",color="white")+
         labs(x=glue::glue("{myData()$xAxis} P90"),
@@ -373,7 +380,7 @@ server <- function(input, output) {
         theme(plot.title = element_text(hjust=0.5, size = 15),
               plot.subtitle = element_text(hjust=0.5))
     }else  if(input$typeX != "p90X" & input$typeY == "p90Y") {
-      ggplot(myData(),aes(x=as.integer(X),y=as.integer(Y)/`90s`))+geom_point(colour='#026937') +
+      ggplot(myData(),aes(x=as.integer(X),y=as.integer(Y)/`90s`))+ geom_point(colour='red',alpha=0.5) +
         geom_label_repel(data=myData()%>% filter(X > quantile(X, input$percX/100)|
                                                    Y/`90s` > quantile(Y/`90s`, input$percY/100)),aes(label = Player),fill="black",color="white")+
         labs(x=glue::glue("{myData()$xAxis}"),
@@ -385,7 +392,7 @@ server <- function(input, output) {
         theme(plot.title = element_text(hjust=0.5, size = 15),
               plot.subtitle = element_text(hjust=0.5))
     }else{
-      ggplot(myData(),aes(x=as.integer(X),y=as.integer(Y)))+geom_point(colour='#026937') +
+      ggplot(myData(),aes(x=as.integer(X),y=as.integer(Y)))+geom_point(colour='red',alpha=0.5) +
         geom_label_repel(data=myData()%>% filter(X > quantile(X, input$percX/100)|
                                                    Y > quantile(Y, input$percY/100)),aes(label = Player),fill="black",color="white")+
         labs(x=glue::glue("{myData()$xAxis}"),
@@ -458,7 +465,7 @@ server <- function(input, output) {
   output$plot5<-renderPlot({
     if(input$typeXSquad == "p90XSquad" & input$typeYSquad != "p90YSquad"){
       ggplot(myData2(),aes(x=as.integer(X)/`Matches Played`,y=as.integer(Y)))+
-        geom_point(colour='#026937') +
+        geom_point(colour='red',alpha=0.5) +
         geom_label_repel(data=myData2()%>% filter(X/`Matches Played` > quantile(X/`Matches Played`, input$percXSquad/100)|
                                                     Y > quantile(Y, input$percYSquad/100)),aes(label = Squad),fill="black",color="white")+
         labs(x=glue::glue("{myData2()$xAxis} P90"),
@@ -479,17 +486,17 @@ server <- function(input, output) {
              title = paste0(myData2()$xAxis," and " ,myData2()$yAxis, " 19/20"),
              subtitle= paste(unique(myData2()$comp),collapse=" - "),
              caption = "Data from FBref.com\nMade on ShinyNew.RobinKoetsier.nl/FBrefApp") +
-        dark_theme_gray()+
+        geom_point(colour='red',alpha=0.5) +
         theme(plot.title = element_text(hjust=0.5, size = 15),
               plot.subtitle = element_text(hjust=0.5))
     }else  if(input$typeXSquad != "p90XSquad" & input$typeYSquad == "p90YSquad") {
       ggplot(myData2(),aes(x=as.integer(X),y=as.integer(Y)/`Matches Played`))+
-        geom_point(colour='#026937') +
+        geom_point(colour='red',alpha=0.5) +
         geom_label_repel(data=myData2()%>% filter(X > quantile(X, input$percXSquad/100)|
                                                     Y/`Matches Played` > quantile(Y/`Matches Played`, input$percYSquad/100)),aes(label = Squad),fill="black",color="white")+
         labs(x=glue::glue("{myData2()$xAxis}"),
              y=glue::glue("{myData2()$yAxis} P90"),
-             title = paste0(myData2()$xAxis," and " ,myData()$yAxis, " 19/20"),
+             title = paste0(myData2()$xAxis," and " ,myData2()$yAxis, " 19/20"),
              subtitle= paste(unique(myData2()$comp),collapse=" - "),
              caption = "Data from FBref.com\nMade on ShinyNew.RobinKoetsier.nl/FBrefApp") +
         dark_theme_gray()+
@@ -497,7 +504,7 @@ server <- function(input, output) {
               plot.subtitle = element_text(hjust=0.5))
     }else{
       
-      ggplot(myData2(),aes(x=as.integer(X),y=as.integer(Y)))+geom_point(colour='#026937') +
+      ggplot(myData2(),aes(x=as.integer(X),y=as.integer(Y)))+geom_point(colour='red',alpha=0.5) +
         geom_label_repel(data=myData2()%>% filter(X > quantile(X, input$percXSquad/100)|
                                                     Y > quantile(Y, input$percYSquad/100)),aes(label = Squad),fill="black",color="white")+
         labs(x=myData2()$xAxis,
@@ -511,12 +518,7 @@ server <- function(input, output) {
     }
   }
   , height = 500, width = 750)
-  output[["myPlot"]] <- renderUI({
-    plot = ggplot(myData2(), aes(x = X, y = Y)) + geom_point(aes(colour = "red"))
-    varDict = list(comp = "Width", X = "X", Y = "Y")
-  
-    ggtips::plotWithTooltips(plot, varDict = varDict)
-  })
+ 
 }
 
 shinyApp(ui = ui, server = server)
