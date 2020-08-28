@@ -13,7 +13,7 @@ ga_set_tracking_id("UA-175572271-1")
 ga_set_approval(consent = TRUE)
 
 
-ELCL <- readRDS("All.rds")
+ELCL <- readRDS("ALL.rds")
 AllSquad <- readRDS("AllSquad.rds")
 
 colnames(AllSquad) <- gsub("(GK)","GK",colnames(AllSquad))
