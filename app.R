@@ -109,6 +109,7 @@ tabsetPanel(
              mainPanel(
                tabsetPanel(type = "tabs",
                            tabPanel("Plot", 
+                                    uiOutput("myPlot"),
                                     h4("", align = "center"),
                                     
                                     plotOutput("plot2")),
@@ -192,7 +193,7 @@ tabsetPanel(
 
 
 server <- function(input, output) {
- 
+  
   observeEvent(input$Competition, {
     print(input$Competition)
     sub<-input$Competition
@@ -403,7 +404,7 @@ server <- function(input, output) {
       ggplot(myData2(),aes(x=as.integer(X)/`Matches Played`,y=as.integer(Y)))+
         geom_point(colour='#026937') +
         geom_label_repel(data=myData2()%>% filter(X/`Matches Played` > quantile(X/`Matches Played`, input$percXSquad/100)|
-                                                   Y > quantile(Y, input$percYSquad/100)),aes(label = Squad),fill="white",color="black")+
+                                                    Y > quantile(Y, input$percYSquad/100)),aes(label = Squad),fill="white",color="black")+
         labs(x=glue::glue("{myData2()$xAxis} P90"),
              y=glue::glue("{myData2()$yAxis}"),
              title = paste0(myData2()$xAxis," and " ,myData2()$yAxis, " 19/20"),
@@ -416,7 +417,7 @@ server <- function(input, output) {
       ggplot(myData2(),aes(x=as.integer(X)/`Matches Played`,y=as.integer(Y)/`Matches Played`))+
         geom_point(colour='#026937') +
         geom_label_repel(data=myData2()%>% filter(X/`Matches Played` > quantile(X/`Matches Played`, input$percXSquad/100)|
-                                                   Y/`Matches Played` > quantile(Y/`Matches Played`, input$percYSquad/100)),aes(label = Squad),fill="white",color="black")+
+                                                    Y/`Matches Played` > quantile(Y/`Matches Played`, input$percYSquad/100)),aes(label = Squad),fill="white",color="black")+
         labs(x=glue::glue("{myData2()$xAxis} P90"),
              y=glue::glue("{myData2()$yAxis} P90"),
              title = paste0(myData2()$xAxis," and " ,myData2()$yAxis, " 19/20"),
@@ -429,7 +430,7 @@ server <- function(input, output) {
       ggplot(myData2(),aes(x=as.integer(X),y=as.integer(Y)/`Matches Played`))+
         geom_point(colour='#026937') +
         geom_label_repel(data=myData2()%>% filter(X > quantile(X, input$percXSquad/100)|
-                                                   Y/`Matches Played` > quantile(Y/`Matches Played`, input$percYSquad/100)),aes(label = Squad),fill="white",color="black")+
+                                                    Y/`Matches Played` > quantile(Y/`Matches Played`, input$percYSquad/100)),aes(label = Squad),fill="white",color="black")+
         labs(x=glue::glue("{myData2()$xAxis}"),
              y=glue::glue("{myData2()$yAxis} P90"),
              title = paste0(myData2()$xAxis," and " ,myData()$yAxis, " 19/20"),
@@ -442,7 +443,7 @@ server <- function(input, output) {
       
       ggplot(myData2(),aes(x=as.integer(X),y=as.integer(Y)))+geom_point(colour='#026937') +
         geom_label_repel(data=myData2()%>% filter(X > quantile(X, input$percXSquad/100)|
-                                                   Y > quantile(Y, input$percYSquad/100)),aes(label = Squad),fill="white",color="black")+
+                                                    Y > quantile(Y, input$percYSquad/100)),aes(label = Squad),fill="white",color="black")+
         labs(x=myData2()$xAxis,
              y=myData2()$yAxis,
              title = paste0(myData2()$xAxis," and " ,myData2()$yAxis, " 19/20"),
@@ -510,6 +511,12 @@ server <- function(input, output) {
     }
   }
   , height = 500, width = 750)
+  output[["myPlot"]] <- renderUI({
+    plot = ggplot(myData2(), aes(x = X, y = Y)) + geom_point(aes(colour = "red"))
+    varDict = list(comp = "Width", X = "X", Y = "Y")
+  
+    ggtips::plotWithTooltips(plot, varDict = varDict)
+  })
 }
 
 shinyApp(ui = ui, server = server)
