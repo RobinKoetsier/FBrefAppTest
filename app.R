@@ -21,7 +21,7 @@ colnames(AllSquad) <- gsub("(GK)","GK",colnames(AllSquad))
 AllSquad[2:172] %<>% mutate_if(is.character,as.numeric)
 AllSquad[is.na(AllSquad)] <- 0
 ChoicesList <- colnames(ELCL)[c(3:109,111:136)]
-ChoicesListSquad <- colnames(AllSquad)[c(2:157)]
+ChoicesListSquad <- colnames(AllSquad)[c(2:172)]
 ChoicesListSquad <- sort(ChoicesListSquad)
 ChoicesList <- sort(ChoicesList)
 ui <- fluidPage(tags$head(HTML(
@@ -274,12 +274,12 @@ server <- function(input, output) {
         
         
         select(Squad,`Matches Played`,input$xx,input$yy) %>%
+        set_colnames(c("Squad", "Matches Played", "X","Y"))%>%
         mutate(comp = test) %>%
         
         mutate(xAxis = input$xx) %>%
-        mutate(yAxis = input$yy) %>%
-        setNames(gsub(input$xx, "X", names(.))) %>%
-        setNames(gsub(input$yy, "Y", names(.))) 
+        mutate(yAxis = input$yy) 
+       
     }
     
   })
@@ -505,9 +505,9 @@ server <- function(input, output) {
               plot.subtitle = element_text(hjust=0.5))
     }else{
       
-      ggplot(myData2(),aes(x=as.integer(X),y=as.integer(Y)))+geom_point(colour='red',alpha=0.5) +
-        geom_label_repel(data=myData2()%>% filter(X > quantile(X, input$percXSquad/100)|
-                                                    Y > quantile(Y, input$percYSquad/100)),aes(label = Squad),fill="black",color="white")+
+      ggplot(myData2(),aes(x=as.numeric(X),y=as.numeric(Y)))+geom_point(colour='red',alpha=0.5) +
+        geom_label_repel(data=myData2()%>% filter(X > quantile(as.numeric(X), input$percXSquad/100)|
+                                                    Y > quantile(as.numeric(Y), input$percYSquad/100)),aes(label = Squad),fill="black",color="white")+
         labs(x=myData2()$xAxis,
              y=myData2()$yAxis,
              title = paste0(myData2()$xAxis," and " ,myData2()$yAxis, " 19/20"),
