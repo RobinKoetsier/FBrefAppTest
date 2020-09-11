@@ -10,21 +10,25 @@ library(shinyWidgets)
 library(plyr)
 source("HelpersFBREF.R")
 library(magrittr)
+library(shinythemes)
 ga_set_tracking_id("UA-175572271-1")
 ga_set_approval(consent = TRUE)
 
 
 ELCL <- readRDS("ALL.rds")
+
 AllSquad <- readRDS("AllSquad.rds")
 
-colnames(AllSquad) <- gsub("(GK)","GK",colnames(AllSquad))
+
 AllSquad[2:172] %<>% mutate_if(is.character,as.numeric)
 AllSquad[is.na(AllSquad)] <- 0
 ChoicesList <- colnames(ELCL)[c(3:109,111:136)]
 ChoicesListSquad <- colnames(AllSquad)[c(2:172)]
 ChoicesListSquad <- sort(ChoicesListSquad)
 ChoicesList <- sort(ChoicesList)
-ui <- fluidPage(tags$head(HTML(
+ui <- navbarPage(theme = shinytheme("yeti"),selected = "Players",
+  tags$head(HTML(
+  
   "<script>
       (function(i,s,o,g,r,a,m){
         i['GoogleAnalyticsObject']=r;i[r]=i[r]||
@@ -44,13 +48,17 @@ ui <- fluidPage(tags$head(HTML(
 )),
 
 # Application title
-titlePanel("Create your own FBref scatter plot - A Shiny app by @RobinWilhelmus"),
+title = "Create your own FBref scatter plot - A Shiny app by @RobinWilhelmus",
 
-tabsetPanel(
+
   tabPanel("Players",
            sidebarLayout(
              sidebarPanel(
                fluidRow(column(6, 
+                               radioButtons("season", "Season:",
+                                            c("19/20" = "2019",
+                                              "20/21" = "2020"),
+                                            width = "50"),
                                checkboxGroupInput(inputId = "Competition",
                                                   label = "Select Competition(s):",
                                                   choices = unique(ELCL$comp),
@@ -179,7 +187,7 @@ tabsetPanel(
              mainPanel("Last update: 29-08-2020",
                tabsetPanel(type = "tabs",
                                     tabPanel("Plot", 
-                                             textOutput("selected_var"),
+                                          #   textOutput("selected_var"),
                                              h4("", align = "center"),
                                              plotOutput("plot4")),
                                     # tableOutput("myTable")),
@@ -188,13 +196,14 @@ tabsetPanel(
                                              h4("", align = "center"),
                                              plotOutput("plot5")),
                                     tabPanel("Table", 
+                                             
                                              reactableOutput("codes", width = "auto", height = "auto",
                                                              inline = FALSE),
                                              h4("", align = "center"))
              )))
   )
 ) #Close outer tabsetPanel
-) 
+
 
 
 server <- function(input, output) {
@@ -216,30 +225,28 @@ server <- function(input, output) {
     if(input$sum == "yes"){
       test <- paste(input$Competition, collapse=" - ")
       filter(ELCL,`90s` >= input$minNinety) %>% filter(comp %in% input$Competition) %>%
+        filter(Season %in% input$season) %>%
         filter(Squad %in% input$teams) %>%
         filter(Age>input$age[1] & Age < input$age[2])%>%
         ddply(c("Player","Age","Born"), numcolwise(sum)) %>%
         select(Player,`90s`,input$x,input$y) %>%
+        set_colnames(c("Player", "90s", "X","Y"))%>%
         mutate(comp = test) %>%
         
         mutate(xAxis = input$x) %>%
-        mutate(yAxis = input$y) %>%
-        setNames(gsub(input$x, "X", names(.))) %>%
-        setNames(gsub(input$y, "Y", names(.))) 
+        mutate(yAxis = input$y) 
       
     }else{
       filter(ELCL,`90s` >= input$minNinety) %>% filter(comp %in% input$Competition) %>%
         filter(Squad %in% input$teams) %>%
+        filter(Season %in% input$season) %>%
         filter(Age>input$age[1] & Age < input$age[2])%>%
         select(Player,`90s`,input$x,input$y,comp) %>%
         # mutate(subtitle = sub) %>%
-        
+        set_colnames(c("Player", "90s", "X","Y","comp"))%>%
         mutate(xAxis = input$x) %>%
-        mutate(yAxis = input$y) %>%
-        setNames(gsub(input$x, "X", names(.))) %>%
-        setNames(gsub(input$y, "Y", names(.))) 
+        mutate(yAxis = input$y) 
     }
-    
   })
   output$selected_var <- renderText({ 
     input$xx
@@ -250,40 +257,39 @@ server <- function(input, output) {
     
     req(input$CompetitionSquad)
     
-    
-    
-    
-    if(input$sum == "yes"){
-      test <- paste(input$CompetitionSquad, collapse=" - ")
-      filter(AllSquad,comp %in% input$CompetitionSquad) %>%
-        filter(Squad %in% input$teams) %>%
-        
-        ddply(c("Squad"), numcolwise(sum)) %>%
-        select(Squad,`Matches Played`,input$xx,input$yy) %>%
-        mutate(comp = test) %>%
-        
-        mutate(xAxis = input$xx) %>%
-        mutate(yAxis = input$yy) %>%
-        setNames(gsub(input$xx, "X", names(.))) %>%
-        setNames(gsub(input$yy, "Y", names(.))) 
-      
-    }else{
       test <- paste(input$CompetitionSquad, collapse=" - ")
       filter(AllSquad,comp %in% input$CompetitionSquad) %>%
         filter(Squad %in% input$teams) %>%
         
         
-        select(Squad,`Matches Played`,input$xx,input$yy) %>%
-        set_colnames(c("Squad", "Matches Played", "X","Y"))%>%
+        select(Squad,`Matches Played`,input$xx,input$yy,Season) %>%
+        set_colnames(c("Squad", "Matches Played", "X","Y","Season"))%>%
         mutate(comp = test) %>%
         
         mutate(xAxis = input$xx) %>%
         mutate(yAxis = input$yy) 
        
-    }
+    
     
   })
   output$codes <- renderReactable({
+    reactable(
+      myData(),
+      searchable = TRUE,
+      striped = TRUE,
+      highlight = TRUE,
+      bordered = TRUE,
+      theme = reactableTheme(
+        borderColor = "#dfe2e5",
+        stripedColor = "#f6f8fa",
+        highlightColor = "#f0f5f9",
+        cellPadding = "8px 12px",
+        style = list(fontFamily = "-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif"),
+        searchInputStyle = list(width = "100%")
+      )
+    )
+  })
+  output$codes2 <- renderReactable({
     reactable(
       myData2(),
       searchable = TRUE,
