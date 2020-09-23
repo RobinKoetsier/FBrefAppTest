@@ -15,9 +15,23 @@ ga_set_tracking_id("UA-175572271-1")
 ga_set_approval(consent = TRUE)
 
 
-ELCL <- readRDS("ALL.rds")
+ELCL1 <- readRDS("ALL.rds")
+colnames(ELCL1)[16] <- "Penalty Kicks Attempted"
+colnames(ELCL1)[23] <- "Passes Attempted"
+ELCL2 <- readRDS("ALL2020.rds")
+ELCL <- rbind(ELCL1,ELCL2)
 
-AllSquad <- readRDS("AllSquad.rds")
+
+AllSquad2019 <- readRDS("AllSquad.rds")
+AllSquad2019 <- AllSquad2019 %>% dplyr::select(-c(170))
+colnames(AllSquad2019)[36] <- "Medium Passes Attempted"
+colnames(AllSquad2019)[39] <- "Long Passes Attempted"
+AllSquad2020 <- readRDS("AllSquad2020.rds") #%>% dplyr::select(-c(172))
+colnames(AllSquad2020)[33] <- "Short Passes Attempted"
+AllSquad2019$Season <- "2019"
+AllSquad2020$Season <- "2020"
+AllSquad <- rbind(AllSquad2019,AllSquad2020)
+
 
 
 AllSquad[2:172] %<>% mutate_if(is.character,as.numeric)
@@ -26,7 +40,7 @@ ChoicesList <- colnames(ELCL)[c(3:109,111:136)]
 ChoicesListSquad <- colnames(AllSquad)[c(2:172)]
 ChoicesListSquad <- sort(ChoicesListSquad)
 ChoicesList <- sort(ChoicesList)
-ui <- navbarPage(theme = shinytheme("yeti"),selected = "Players",
+ui <- navbarPage(theme = shinytheme("flatly"),selected = "Players",
   tags$head(HTML(
   
   "<script>
@@ -229,7 +243,7 @@ server <- function(input, output) {
         filter(Squad %in% input$teams) %>%
         filter(Age>input$age[1] & Age < input$age[2])%>%
         ddply(c("Player","Age","Born"), numcolwise(sum)) %>%
-        select(Player,`90s`,input$x,input$y) %>%
+        dplyr::select(Player,`90s`,input$x,input$y) %>%
         set_colnames(c("Player", "90s", "X","Y"))%>%
         mutate(comp = test) %>%
         
@@ -241,7 +255,7 @@ server <- function(input, output) {
         filter(Squad %in% input$teams) %>%
         filter(Season %in% input$season) %>%
         filter(Age>input$age[1] & Age < input$age[2])%>%
-        select(Player,`90s`,input$x,input$y,comp) %>%
+        dplyr::select(Player,`90s`,input$x,input$y,comp) %>%
         # mutate(subtitle = sub) %>%
         set_colnames(c("Player", "90s", "X","Y","comp"))%>%
         mutate(xAxis = input$x) %>%
@@ -262,7 +276,7 @@ server <- function(input, output) {
         filter(Squad %in% input$teams) %>%
         
         
-        select(Squad,`Matches Played`,input$xx,input$yy,Season) %>%
+        dplyr::select(Squad,`Matches Played`,input$xx,input$yy,Season) %>%
         set_colnames(c("Squad", "Matches Played", "X","Y","Season"))%>%
         mutate(comp = test) %>%
         
