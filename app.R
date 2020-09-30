@@ -34,7 +34,7 @@ AllSquad <- rbind(AllSquad2019,AllSquad2020)
 
 
 
-AllSquad[2:172] %<>% mutate_if(is.character,as.numeric)
+AllSquad[2:171] %<>% mutate_if(is.character,as.numeric)
 AllSquad[is.na(AllSquad)] <- 0
 ChoicesList <- colnames(ELCL)[c(3:109,111:136)]
 ChoicesListSquad <- colnames(AllSquad)[c(2:172)]
@@ -102,7 +102,7 @@ title = "Create your own FBref scatter plot - A Shiny app by @RobinWilhelmus",
                           inputId = "teams", label = "Teams to show players from:",
                           choices = unique(ELCL$Squad),
                           options = list(`actions-box` = TRUE,`live-search`=TRUE), 
-                          selected = ELCL$Squad,
+                          selected = unique(ELCL$Squad),
                           multiple = TRUE
                         ),    
                         selectInput('x', 'X', 
@@ -131,7 +131,7 @@ title = "Create your own FBref scatter plot - A Shiny app by @RobinWilhelmus",
                )),
              
              # Show a plot of the generated distribution
-             mainPanel("Last update: 24-09-2020",
+             mainPanel("Last update: 30-09-2020",
                tabsetPanel(type = "tabs",
                            tabPanel("Plot", 
                                  #   uiOutput("myPlot"),
@@ -153,11 +153,16 @@ title = "Create your own FBref scatter plot - A Shiny app by @RobinWilhelmus",
            sidebarLayout(
              sidebarPanel(
                fluidRow(column(6, 
+                               radioButtons("seasonSQ", "Season:",
+                                            c("19/20" = "2019",
+                                              "20/21" = "2020"),
+                                            selected = "2020",
+                                            width = "50"),
                                checkboxGroupInput(inputId = "CompetitionSquad",
                                                   label = "Select Competition(s):",
                                                   choices = unique(AllSquad$comp),
                                                   selected =  unique(AllSquad$comp)[c(1:5)])),
-                        column(3,
+                        column(6,
                                radioButtons("typeXSquad", "X Axis:",
                                             c("Sum" = "normX",
                                               "Per Match" = "p90XSquad"),
@@ -173,10 +178,10 @@ title = "Create your own FBref scatter plot - A Shiny app by @RobinWilhelmus",
                         hr(),hr(),hr(),hr(),hr(),hr(),hr(),hr(),hr(),hr(),hr(),hr(),hr(),
                         
                         pickerInput(
-                          inputId = "teams", label = "Teams to show:",
+                          inputId = "teams2", label = "Teams to show:",
                           choices = unique(AllSquad$Squad),
                           options = list(`actions-box` = TRUE,`live-search`=TRUE), 
-                          selected = ELCL$Squad,
+                          selected = AllSquad$Squad,
                           multiple = TRUE
                         ),    
                         selectInput('xx', 'X', 
@@ -199,7 +204,7 @@ title = "Create your own FBref scatter plot - A Shiny app by @RobinWilhelmus",
                         numericInput("percYSquad", "See label above certain percentile Y:", 95, min = 50, max = 100)
                         
                )),
-             mainPanel("Last update: 29-08-2020",
+             mainPanel("Last update: 30-09-2020",
                tabsetPanel(type = "tabs",
                                     tabPanel("Plot", 
                                           #   textOutput("selected_var"),
@@ -212,7 +217,7 @@ title = "Create your own FBref scatter plot - A Shiny app by @RobinWilhelmus",
                                              plotOutput("plot5")),
                                     tabPanel("Table", 
                                              
-                                             reactableOutput("codes", width = "auto", height = "auto",
+                                             reactableOutput("codes2", width = "auto", height = "auto",
                                                              inline = FALSE),
                                              h4("", align = "center"))
              )))
@@ -246,7 +251,7 @@ server <- function(input, output) {
         ddply(c("Player","Age","Born"), numcolwise(sum)) %>%
         dplyr::select(Player,`90s`,input$x,input$y) %>%
         set_colnames(c("Player", "90s", "X","Y"))%>%
-        mutate(comp = test) %>%
+        mutate(comp. = test) %>%
         
         mutate(xAxis = input$x) %>%
         mutate(yAxis = input$y) 
@@ -273,18 +278,19 @@ server <- function(input, output) {
     req(input$CompetitionSquad)
     
       test <- paste(input$CompetitionSquad, collapse=" - ")
-      filter(AllSquad,comp %in% input$CompetitionSquad) %>%
-        filter(Squad %in% input$teams) %>%
+     filter(AllSquad,comp %in% input$CompetitionSquad) %>%
+        filter(Season %in% input$seasonSQ) %>%
+        filter(Squad %in% input$teams2) %>%
         
         
         dplyr::select(Squad,`Matches Played`,input$xx,input$yy,Season) %>%
         set_colnames(c("Squad", "Matches Played", "X","Y","Season"))%>%
-        mutate(comp = test) %>%
+        mutate(comp. = test) %>%
         
         mutate(xAxis = input$xx) %>%
         mutate(yAxis = input$yy) 
        
-    
+  
     
   })
   output$codes <- renderReactable({
